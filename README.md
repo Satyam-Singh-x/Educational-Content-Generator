@@ -2,7 +2,7 @@
 
 LangGraph · Gemini · Streamlit
 
-Live Demo: 
+Live Demo: https://educational-content-generator-bysatyam.streamlit.app/
 
 Overview
 
