@@ -1,235 +1,224 @@
-📘 Educational Content Generation Agent
+<div align="center">
 
-LangGraph · Gemini · Streamlit
+# ⚡ Edynapse — AI Educational Content Engine
 
-Live Demo: https://educational-content-generator-bysatyam.streamlit.app/
 
-Overview
 
-This project implements an AI-powered educational content generation system designed to create grade-appropriate explanations and MCQs for school students.
-The system uses a graph-based agent architecture with automated review and controlled refinement to ensure quality and structure.
 
-The application is built using:
 
-LangGraph for agent orchestration
 
-Gemini (Google Generative AI) for content generation and evaluation
+**Curriculum-aligned educational content — generated, reviewed, and refined autonomously.**
 
-Pydantic for strict schema enforcement
+Live demo: https://educational-content-generator-bysatyam.streamlit.app/
 
-Streamlit for an interactive web interface
+---
 
-Key Features
+</div>
 
-Structured Content Generation
+## 📌 Overview
 
-Generates explanations and multiple-choice questions (MCQs)
+**Edynapse** is a B2B EdTech platform that uses an **agentic AI pipeline** to generate structured educational content for Grades 1–12. Built on **LangGraph** and powered by **Groq's LLaMA 3.3 70B** (free tier), it autonomously generates explanations and MCQs, reviews them against a quality rubric, and self-corrects on failure — all without human intervention.
 
-Output strictly follows predefined Pydantic schemas
+> 🆓 This edition runs entirely on **Groq's free API** — no billing required.
 
-Automated Review Agent
+---
 
-Reviews generated content for:
-
-Grade appropriateness
-
-Concept coverage
-
-MCQ correctness and clarity
-
-Returns a deterministic pass / fail decision with actionable feedback
-
-Controlled Refinement
-
-If content fails review, the system performs one guided retry
-
-Reviewer feedback is injected into regeneration
-
-Prevents infinite loops or uncontrolled retries
-
-Transparent Agent Inspector
-
-View structured outputs from each node
-
-Inspect reviewer feedback and retry count
-
-Execution logs for debugging and evaluation
-
-Deployable Streamlit UI
-
-Clean, user-friendly interface
-
-Ready for deployment on Streamlit Cloud
-
-System Architecture
-
-The agent workflow is implemented using LangGraph:
-
+## 🏗️ Architecture
+```
 START
+  │
+  ▼
+┌─────────────┐     parsed JSON     ┌──────────────┐
+│  Generator  │ ──── Content ──────▶│   Reviewer   │
+│   Node      │                     │    Node      │
+└─────────────┘                     └──────┬───────┘
+       ▲                                   │
+       │            fail + retries left    │ pass
+       │◀──────────────────────────────────┤
+       │                                   │
+  (retry once)                             ▼
+                                          END
+```
 
-  ↓
-  
-Generator Node
+| Node | Role | Model |
+|---|---|---|
+| **Generator** | Produces `explanation` + 5 MCQs via JSON-fence prompting | LLaMA 3.3 70B (Groq) |
+| **Reviewer** | Evaluates against a 3-criterion rubric, returns `pass`/`fail` | LLaMA 3.3 70B (Groq) |
+| **Router** | Sends back to Generator once on `fail`; ends on `pass` or retry exhaustion | — |
 
-  ↓
-  
-Reviewer Node
+---
 
-  ↓
-(pass) ─────────▶END
-  ↓
-  
-(fail + retry_count = 0)
+## ✨ Features
 
-  ↓
-  
-Generator (refined)
+- 🧠 **Agentic self-correction** — automatically retries once on review failure
+- 🔧 **Manual JSON parsing** — robust 3-stage extractor replaces `with_structured_output()` (unsupported on Groq)
+- ✅ **Pydantic post-validation** — all model output validated after parsing
+- 🎓 **Grade-aware generation** — calibrated language for Grades 1–12
+- 📝 **5 MCQs per lesson** — each testing a different concept from the explanation
+- 🔍 **Rubric-based review** — grade appropriateness, explanation quality, MCQ quality
+- 📥 **Markdown export** — download a beautifully structured `.md` file
+- 🖥️ **Professional B2B UI** — dark theme Streamlit dashboard with KPI stats
+- 🆓 **100% free to run** — Groq free tier, no credit card needed
 
-  ↓
-  
-Reviewer
+---
 
-  ↓
-  
-END
-
-
-
-Core Nodes
-
-Generator
-
-Produces structured educational content using Gemini
-
-Optionally refines output based on reviewer feedback
-
-Reviewer
-
-Evaluates generated content against explicit criteria
-
-Outputs structured review results
-
-Decision Logic
-
-Routes execution based on review outcome
-
-Enforces a single retry policy
-
-Tech Stack
-
-Python 3.10+
-
-LangGraph
-
-LangChain
-
-Google Gemini (Flash)
-
-Pydantic
-
-Streamlit
-
-python-dotenv
-
-Project Structure
-.
-├── app.py                  # Streamlit UI
-
-├── Agent_orchestration.py  # LangGraph agent and nodes
-
-├── requirements.txt
-
+## 🗂️ Project Structure
+```
+edynapse-groq/
+│
+├── app.py                  # Streamlit frontend (B2B dashboard UI)
+├── Agent_orchestration.py  # LangGraph pipeline (generator + reviewer + router)
+├── requirements.txt        # Python dependencies
+├── .env                    # Local secrets (never commit this)
+├── .env.example            # Template for environment variables
 └── README.md
+```
 
-Setup & Installation
+---
 
-1️⃣ Clone the Repository
+## 🚀 Getting Started
 
-git clone https://github.com/Satyam-Singh-x/Educational-Content-Generator/
+### Prerequisites
+
+- Python 3.10+
+- A Groq API key (free) → [Get one here](https://console.groq.com/keys)
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/Satyam-Singh-x/Educational-Content-Generator.git
 cd Educational-Content-Generator
+```
 
-2️⃣ Install Dependencies
+### 2. Install dependencies
+```bash
 pip install -r requirements.txt
+```
 
-3️⃣ Configure API Key
+### 3. Set up environment variables
+```bash
+cp .env.example .env
+```
 
-Create a .env file (local development only):
+Edit `.env`:
+```env
+GROQ_API_KEY="your-groq-api-key-here"
+```
 
-GOOGLE_API_KEY=your_api_key_here
-
-
-For Streamlit Cloud, add the key under:
-
-App Settings → Secrets
-
-Running the Application
-
+### 4. Run locally
+```bash
 streamlit run app.py
+```
 
+---
 
-Then open the local URL provided by Streamlit.
+## ☁️ Deploying to Streamlit Cloud
 
-Usage
+1. Push your repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**
+3. Select your repo and set `app.py` as the main file
+4. Open **Advanced settings → Secrets** and add:
+```toml
+GROQ_API_KEY = "your-groq-api-key-here"
+```
 
-Select a grade level
+5. Click **Deploy** ✅
 
-Enter a topic
+> ⚠️ Never commit your `.env` file or API key to GitHub.
 
-Click Generate Content
+---
 
-View:
+## 📦 Dependencies
+```
+streamlit
+langgraph
+langchain
+langchain-groq
+groq
+python-dotenv
+pydantic
+langchain-core
+```
 
-Final explanation and MCQs
+---
 
-Agent Inspector tab with:
+## 🔑 Environment Variables
 
-Generator output
+| Variable | Description | Required |
+|---|---|---|
+| `GROQ_API_KEY` | Groq API key for LLaMA 3.3 70B access | ✅ Yes |
 
-Reviewer feedback
+---
 
-Retry count
+## 🧠 How the Pipeline Works
 
-Execution logs
+### Why Manual JSON Parsing?
 
-Download structured JSON output if needed
+Groq does not support LangChain's `with_structured_output()`. Instead, Edynapse uses a **JSON-fence prompting contract** combined with a **3-stage extractor**:
+```
+Stage 1 → Extract from ```json ... ``` fence  (primary — always enforced in prompt)
+Stage 2 → Find first balanced { ... } brace block  (fallback)
+Stage 3 → Attempt raw string parse  (last resort)
+```
 
-Design Principles
+All extracted dicts are then validated through **Pydantic models** before entering pipeline state.
 
-Single Source of Truth
+### Generator Node
+Receives `grade` and `topic`, sends a JSON-fence prompt to **LLaMA 3.3 70B on Groq**. Returns a validated `Content` object containing:
+- A three-part explanation (INTRO → CONCEPTS → SUMMARY)
+- Exactly 5 MCQs, each testing a different concept
 
-generator_output always holds the latest structured content
+### Reviewer Node
+Receives the `Content` object, evaluates it against a 3-criterion rubric:
+1. **Grade Appropriateness** — language and vocabulary match the grade
+2. **Explanation Quality** — structure, accuracy, and word count
+3. **MCQ Quality** — format, concept coverage, distractor plausibility
 
-Strict Schema Enforcement
+Returns a validated `Review` object with `status: "pass" | "fail"` and component-level feedback like:
+```
+"MCQ 2: References mitosis which is not in the explanation. Rewrite to test a covered concept."
+```
 
-All LLM outputs are validated using Pydantic models
+### Router
+- `pass` → pipeline ends, output surfaced to UI
+- `fail` + retries remaining → feedback injected into Generator prompt
+- `fail` + retries exhausted → best-effort output surfaced to UI
 
-Deterministic Control Flow
+> The retry counter is incremented inside the **Generator node's return dict**, not the router — respecting LangGraph's immutable state contract.
 
-No memory agents
+---
 
-No uncontrolled loops
+## 📸 UI Overview
 
-Clear retry limits
+| Section | Description |
+|---|---|
+| **Hero** | Edynapse branding, product tagline |
+| **Left Panel** | Grade selector, topic input, pipeline diagram |
+| **Stat Row** | Generation time, retries used, MCQ count, review status |
+| **Output Tab** | Explanation card + MCQ cards with highlighted correct answers |
+| **Inspector Tab** | Raw JSON from generator + reviewer, execution logs |
+| **Export** | One-click Markdown download |
 
-Transparency
+---
 
-Reviewer decisions and feedback are exposed
+## ⚖️ Groq vs Gemini Edition
 
+| Feature | Groq Edition | Gemini Edition |
+|---|---|---|
+| Model | LLaMA 3.3 70B | Gemini 2.5 Flash |
+| Structured output | Manual JSON parsing | `with_structured_output()` |
+| Cost | **Free** | Pay-per-use |
+| Speed | Ultra-fast inference | Fast |
+| JSON reliability | Prompt-engineered fence contract | Native schema binding |
+| Best for | Prototyping, demos, free deployment | Production, higher reliability |
 
-No hidden post-processing
+---
 
-Future Improvements (Optional)
+## 📄 License
 
-Add grade-specific reviewer strictness
+MIT License © 2024 Edynapse
 
-Support additional question types
+---
 
-Add authentication for multi-user usage
-
-Persist logs and outputs for analytics
-
-Author
-
-Satyam
-AI / ML Developer
-Built as part of an AI Developer Assessment
+<div align="center">
+Built with ⚡ by the Edynapse team
+</div>
