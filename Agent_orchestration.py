@@ -1,6 +1,4 @@
 """
-edu_agent.py
-============
 Agentic Educational Content Pipeline using LangGraph + Google Gemini.
 
 Flow:
@@ -13,7 +11,6 @@ Flow:
 import os
 from typing import List, Literal, Optional
 
-from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, START, StateGraph
@@ -21,10 +18,42 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 # ────────────────────────────────────────────────────────────────────────────
-# Environment
+# Environment — works on both Streamlit Cloud (st.secrets) and local (.env)
 # ────────────────────────────────────────────────────────────────────────────
-load_dotenv()
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
+def _resolve_google_api_key() -> str:
+    """
+    Resolution order:
+      1. st.secrets["GOOGLE_API_KEY"]  — Streamlit Cloud deployment
+      2. os.environ["GOOGLE_API_KEY"]  — local .env via dotenv or shell export
+    Raises RuntimeError if neither source provides the key.
+    """
+    # ── Streamlit Cloud path ──
+    try:
+        import streamlit as st
+        key = st.secrets.get("GOOGLE_API_KEY", "")
+        if key:
+            return key
+    except Exception:
+        pass  # streamlit not available or secrets not configured
+
+    # ── Local / CI path ──
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass  # python-dotenv not installed in cloud env — that is fine
+
+    key = os.getenv("GOOGLE_API_KEY", "")
+    if key:
+        return key
+
+    raise RuntimeError(
+        "GOOGLE_API_KEY not found.\n"
+        "  Streamlit Cloud: add it under App Settings -> Secrets as GOOGLE_API_KEY=\"...\"\n"
+        "  Local: set it in your .env file or as a shell environment variable."
+    )
+
+os.environ["GOOGLE_API_KEY"] = _resolve_google_api_key()
 
 # ────────────────────────────────────────────────────────────────────────────
 # LLM
@@ -362,7 +391,7 @@ agent = build_agent()
 _original_generator = generator
 
 
-def generator(state: State) -> dict:
+def generator(state: State) -> dict:  # noqa: F811  (intentional override)
     result = _original_generator(state)
     return {**result, "retry_count": state["retry_count"] + 1}
 
