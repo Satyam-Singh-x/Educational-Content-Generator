@@ -1,8 +1,8 @@
 streamlit
 langgraph
 langchain
-langchain-google-genai
-google-generativeai
+langchain-groq
+groq
 python-dotenv
 pydantic
 langchain-core
