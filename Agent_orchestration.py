@@ -22,6 +22,7 @@ from typing import List, Literal, Optional
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI # Added
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field, ValidationError
 from typing_extensions import TypedDict
