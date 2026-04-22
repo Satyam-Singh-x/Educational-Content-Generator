@@ -29,52 +29,61 @@ from typing_extensions import TypedDict
 # ────────────────────────────────────────────────────────────────────────────
 # Environment — Streamlit Cloud (st.secrets) → local .env → shell env
 # ────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────
+# Environment & Keys
+# ────────────────────────────────────────────────────────────────────────────
 
-def _resolve_api_key() -> str:
-    """
-    Resolution order:
-      1. st.secrets["GROQ_API_KEY"]   — Streamlit Cloud deployment
-      2. os.environ["GROQ_API_KEY"]   — local .env via dotenv or shell export
-    Raises RuntimeError with clear instructions if neither source has the key.
-    """
+def _get_secret(key_name: str) -> str:
+    """Helper to fetch keys from Streamlit secrets or environment."""
     try:
         import streamlit as st
-        key = st.secrets.get("GROQ_API_KEY", "")
-        if key:
-            return key
+        if key_name in st.secrets:
+            return st.secrets[key_name]
     except Exception:
         pass
-
+    
     try:
         from dotenv import load_dotenv
         load_dotenv()
     except ImportError:
         pass
+        
+    return os.getenv(key_name, "")
 
-    key = os.getenv("GROQ_API_KEY", "")
-    if key:
-        return key
+GROQ_KEY = _get_secret("GROQ_API_KEY")
+GOOGLE_KEY = _get_secret("GOOGLE_API_KEY")
 
-    raise RuntimeError(
-        "GROQ_API_KEY not found.\n"
-        "  Streamlit Cloud : App Settings -> Secrets -> GROQ_API_KEY=\"...\"\n"
-        "  Local           : add GROQ_API_KEY=... to your .env file\n"
-        "  Get a free key  : https://console.groq.com/keys"
-    )
-
-
-os.environ["GROQ_API_KEY"] = _resolve_api_key()
+if not GROQ_KEY and not GOOGLE_KEY:
+    raise RuntimeError("Neither GROQ_API_KEY nor GOOGLE_API_KEY found.")
 
 # ────────────────────────────────────────────────────────────────────────────
-# LLM  (llama-3.3-70b-versatile — best free Groq model for structured output)
+# LLM Initializations
 # ────────────────────────────────────────────────────────────────────────────
 
-llm = ChatGroq(
+# Primary Model
+groq_llm = ChatGroq(
     model="llama-3.3-70b-versatile",
     temperature=0.3,
     max_tokens=4096,
+    api_key=GROQ_KEY
 )
 
+# Fallback Model
+gemini_llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash", # Note: Using 2.0 as 2.5 is not yet a standard release string
+    temperature=0.3,
+    google_api_key=GOOGLE_KEY
+)
+
+def smart_invoke(messages):
+    """Try Groq first, fallback to Gemini if Groq fails (e.g., restricted account)."""
+    try:
+        if not GROQ_KEY:
+            raise ValueError("Groq Key missing")
+        return groq_llm.invoke(messages)
+    except Exception as e:
+        print(f"--- Groq failed, switching to Gemini fallback. Error: {e} ---")
+        return gemini_llm.invoke(messages)
 # ────────────────────────────────────────────────────────────────────────────
 # Data Schemas  (Pydantic — used for validation after manual JSON parse)
 # ────────────────────────────────────────────────────────────────────────────
