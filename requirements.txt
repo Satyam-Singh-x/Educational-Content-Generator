@@ -1,8 +1,10 @@
 streamlit
 langgraph
 langchain
+langchain-core
 langchain-groq
+langchain-google-genai
 groq
 python-dotenv
 pydantic
-langchain-core
+typing-extensions
